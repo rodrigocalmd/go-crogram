@@ -3,9 +3,9 @@
 
 Cryptogram generator based on ASCII a-z table. (only lowercase letters without characters, for now)
 
-## **Quickstart**
+### **Quickstart**
 
-### **Example**:
+#### **Example**:
 ```
 package main
 
@@ -32,6 +32,6 @@ func main() {
 bqssg igzsj rzgnztl rzgnztl rzgnztl
 hello world crogram crogram crogram
 ```
-**OBS**: At each run, a new random table is generated. So after exiting the code it will not decode what was previously encoded.
+###### **OBS**: At each run, a new random table is generated. So after exiting the code it will not decode what was previously encoded.
 
-#### **Note**: Code made for entertainment purposes only. Do not use for other purposes.
+##### **Note**: Code made for entertainment purposes only. Do not use for other purposes.
