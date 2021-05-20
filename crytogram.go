@@ -1,4 +1,4 @@
-package main
+package crogram
 
 import (
 	"math/rand"
