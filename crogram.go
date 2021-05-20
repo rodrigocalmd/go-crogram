@@ -2,86 +2,72 @@ package crogram
 
 import (
 	"math/rand"
-	"strconv"
 	"time"
 )
 
-type Cryptogram struct {
-	Correct []TableASCII `json:"correct"`
-	Replace []int        `json:"replace"`
+type cryptogram struct {
+	correct []TableASCII
+	replace []int
 }
 
 type EncodeAndDecodeText struct {
-	TextEncoded string `json:"text_encoded"`
-	TextDecode  string `json:"text_decode"`
-	Cryptogram  Cryptogram
+	cryptogram cryptogram
 }
 
-func (c *EncodeAndDecodeText) Encode(text string) {
+func (c *EncodeAndDecodeText) Encode(text string) string {
 	var encodeText []byte
-	strASCII := strconv.QuoteToASCII(text)
-	for _, v := range strASCII {
+	for _, v := range text {
 		if v == 32 {
 			encodeText = append(encodeText, byte(v))
 			continue
 		}
-		for idx, elem := range c.Cryptogram.Correct {
+		for idx, elem := range c.cryptogram.correct {
 			if rune(elem.Value) == v {
-				char := rune(c.Cryptogram.Replace[idx])
+				char := rune(c.cryptogram.replace[idx])
 				encodeText = append(encodeText, byte(char))
 			}
 		}
 	}
-	c.TextEncoded = string(encodeText)
+	return string(encodeText)
 }
 
-func (d *EncodeAndDecodeText) Decode(text string) {
+func (d *EncodeAndDecodeText) Decode(text string) string {
 	var decodeText []byte
-	strASCII := strconv.QuoteToASCII(text)
-	for _, v := range strASCII {
+	for _, v := range text {
 		if v == 32 {
 			decodeText = append(decodeText, byte(v))
 			continue
 		}
-		for idx, elem := range d.Cryptogram.Replace {
+		for idx, elem := range d.cryptogram.replace {
 			if rune(elem) == v {
-				char := rune(d.Cryptogram.Correct[idx].Value)
+				char := rune(d.cryptogram.correct[idx].Value)
 				decodeText = append(decodeText, byte(char))
 			}
 		}
 	}
-	d.TextDecode = string(decodeText)
+	return string(decodeText)
 }
 
-func (c *EncodeAndDecodeText) GenerateValues() {
-	var cryTable Cryptogram
-	cryTable.Correct = Table
+func generateValues() cryptogram {
+	var cryTable cryptogram
+	cryTable.correct = Table
 	rand.Seed(time.Now().UnixNano())
-	lenT := len(cryTable.Correct)
+	lenT := len(cryTable.correct)
 	copyCorrectValues := make([]int, lenT)
-	for idx, elem := range cryTable.Correct {
+	for idx, elem := range cryTable.correct {
 		copyCorrectValues[idx] = elem.Value
 	}
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(lenT, func(i, j int) {
 		copyCorrectValues[i], copyCorrectValues[j] = copyCorrectValues[j], copyCorrectValues[i]
 	})
-	cryTable.Replace = copyCorrectValues
-	c.Cryptogram = cryTable
-}
-
-func (e *EncodeAndDecodeText) EncodeCryptogram(text string) string {
-	e.Encode(text)
-	return e.TextEncoded
-}
-
-func (e *EncodeAndDecodeText) DecodeCryptogram(text string) string {
-	e.Decode(text)
-	return e.TextDecode
+	cryTable.replace = copyCorrectValues
+	return cryTable
 }
 
 func Crogram() EncodeAndDecodeText {
-	encDec := EncodeAndDecodeText{}
-	encDec.GenerateValues()
+	encDec := EncodeAndDecodeText{
+		cryptogram: generateValues(),
+	}
 	return encDec
 }
