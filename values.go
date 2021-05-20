@@ -1,4 +1,4 @@
-package main
+package crogram
 
 type TableASCII struct {
 	String string `json:"string"`
