@@ -1,3 +1,3 @@
-module crogram
+module github.com/rodrigocalmd/go-crogram
 
-go 1.24.3
+go 1.24
