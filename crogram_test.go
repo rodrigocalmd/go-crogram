@@ -519,6 +519,40 @@ func TestPassphraseCiphersAreReproducible(t *testing.T) {
 	}
 }
 
+// TestPuzzle covers the puzzle front end.
+func TestPuzzle(t *testing.T) {
+	puzzle := crogram.NewPuzzle("The quick brown fox jumps over the lazy dog", crogram.WithSeed(7))
+
+	if puzzle.Ciphertext == puzzle.Plaintext {
+		t.Error("NewPuzzle did not encode the plaintext")
+	}
+	if !puzzle.Solved(puzzle.Plaintext) {
+		t.Error("Solved rejected the plaintext")
+	}
+	if puzzle.Solved(puzzle.Ciphertext) {
+		t.Error("Solved accepted the ciphertext")
+	}
+	if got, want := puzzle.String(), puzzle.Ciphertext; got != want {
+		t.Errorf("String() = %q, want the ciphertext %q", got, want)
+	}
+	if got, want := puzzle.Key(), puzzle.Cipher.Key(); got != want {
+		t.Errorf("Key() = %q, want %q", got, want)
+	}
+
+	rebuilt, err := crogram.ParseKey(puzzle.Key())
+	if err != nil {
+		t.Fatalf("ParseKey(puzzle.Key()): %v", err)
+	}
+	if got := rebuilt.Decode(puzzle.Ciphertext); got != puzzle.Plaintext {
+		t.Errorf("the puzzle key decodes to %q, want %q", got, puzzle.Plaintext)
+	}
+
+	rng := rand.New(rand.NewPCG(2, 3))
+	if _, ok := puzzle.Hint(rng); !ok {
+		t.Error("Hint reported no couple")
+	}
+}
+
 // TestStringKeepsTheAlphabetToItself checks that logging a cipher does not leak
 // the mapping.
 func TestStringKeepsTheAlphabetToItself(t *testing.T) {
