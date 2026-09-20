@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (go ${{ matrix.go }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The version go.mod declares, and the newest release: a library has to
+        # keep building on its stated minimum and on today's toolchain.
+        go: ['1.24.x', 'stable']
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Verify formatting
+        run: test -z "$(gofmt -l .)"
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Build
+        run: go build ./...
+
+      - name: Test with the race detector
+        run: go test -race -coverprofile=coverage.out ./...
+
+      - name: Fuzz the round-trip property
+        if: matrix.go == 'stable'
+        run: go test -run '^$' -fuzz FuzzRoundTrip -fuzztime 20s .
+
+      - name: Upload coverage
+        if: matrix.go == 'stable'
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: coverage.out
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          # Pinned: a linter release that changes its defaults should not be
+          # able to turn this job red on a day nobody touched the code.
+          version: v2.13.2
