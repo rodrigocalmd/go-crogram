@@ -408,6 +408,57 @@ func TestDecodeWith(t *testing.T) {
 	}
 }
 
+// TestFrequencyAndSuggestion covers the analysis helpers.
+func TestFrequencyAndSuggestion(t *testing.T) {
+	f := crogram.Analyse("aab")
+
+	if f.Total != 3 {
+		t.Errorf("Total = %d, want 3", f.Total)
+	}
+	if got := f.Counts['a']; got != 2 {
+		t.Errorf("Counts[a] = %d, want 2", got)
+	}
+	if got, want := f.Rate('a'), 2.0/3.0; got != want {
+		t.Errorf("Rate(a) = %v, want %v", got, want)
+	}
+	if got := f.Rate('z'); got != 0 {
+		t.Errorf("Rate(z) = %v, want 0", got)
+	}
+	if sorted := f.Sorted(); len(sorted) != 2 || sorted[0].Rune != 'a' || sorted[0].Count != 2 {
+		t.Errorf("Sorted() = %+v, want a first and then b", sorted)
+	}
+	if got := f.Top(1); len(got) != 1 || got[0] != 'a' {
+		t.Errorf("Top(1) = %v, want [a]", got)
+	}
+	if got := f.Top(-1); len(got) != 0 {
+		t.Errorf("Top(-1) = %v, want nothing", got)
+	}
+	if got := crogram.Analyse("").Rate('a'); got != 0 {
+		t.Errorf("Rate on an empty profile = %v, want 0", got)
+	}
+
+	c := crogram.NewWithSeed(13)
+	plain := strings.Repeat("the quick brown fox jumps over the lazy dog ", 4)
+	guess := c.SuggestedGuess(c.Encode(plain))
+
+	if len(guess) == 0 {
+		t.Fatal("SuggestedGuess produced no guesses for a long text")
+	}
+	if len(guess) > len(crogram.EnglishFrequency) {
+		t.Errorf("SuggestedGuess made %d guesses, more than the %d reference letters",
+			len(guess), len(crogram.EnglishFrequency))
+	}
+	alphabet := make(map[rune]bool, c.Len())
+	for _, r := range c.Alphabet() {
+		alphabet[r] = true
+	}
+	for cipherRune := range guess {
+		if !alphabet[cipherRune] {
+			t.Errorf("SuggestedGuess keyed on %q, which is not in the alphabet", cipherRune)
+		}
+	}
+}
+
 // TestHintRevealsRealCouples checks that a hint is always a true statement
 // about the cipher.
 func TestHintRevealsRealCouples(t *testing.T) {
