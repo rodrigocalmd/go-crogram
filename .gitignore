@@ -1,0 +1,6 @@
+# Coverage output from `make cover`.
+coverage.out
+
+# Test binaries and editor or OS droppings.
+*.test
+.DS_Store
