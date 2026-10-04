@@ -1,0 +1,38 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: gofmt
+        run: test -z "$(gofmt -l .)"
+      - run: go vet ./...
+      - run: go build ./...
+      - run: go test -race -cover ./...
+
+  # A short run of every fuzz target. For a longer run use "make fuzz".
+  fuzz:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: FuzzRoundTrip, pkg: . }
+          - { target: FuzzCharsetRoundTrip, pkg: . }
+          - { target: FuzzFromKey, pkg: . }
+          - { target: FuzzNewWithCharset, pkg: . }
+          - { target: FuzzStreamMatchesEncode, pkg: . }
+          - { target: FuzzCLI, pkg: ./cmd/crogram }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go test -run '^$' -fuzz '^${{ matrix.target }}$' -fuzztime 15s ${{ matrix.pkg }}
