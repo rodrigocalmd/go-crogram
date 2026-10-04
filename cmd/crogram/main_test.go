@@ -139,3 +139,29 @@ func TestKeyRejectsText(t *testing.T) {
 		}
 	}
 }
+
+// Arbitrary arguments must never panic, and the exit code must be one of the
+// documented ones (0 ok, 1 I/O error, 2 invalid usage).
+func FuzzCLI(f *testing.F) {
+	f.Add("encode", "-s", "42")
+	f.Add("-c", "pt", "decode")
+	f.Add("key", "-k", "c3:abcbca")
+	f.Add("--seed=7", "encode", "texto")
+	f.Add("-q", "--version", "x")
+	f.Add("decode", "-k", "")
+	f.Fuzz(func(t *testing.T, a, b, c string) {
+		args := []string{a, b, c}
+		// -f and -o touch real files: never let the fuzzer choose paths.
+		for _, arg := range args {
+			name := strings.TrimLeft(arg, "-")
+			if strings.HasPrefix(arg, "-") && (strings.HasPrefix(name, "o") || strings.HasPrefix(name, "f")) {
+				t.Skip()
+			}
+		}
+		t.Chdir(t.TempDir())
+		code, _, _ := do("some input\n", args...)
+		if code < 0 || code > 2 {
+			t.Fatalf("args %q: exit code %d, want 0, 1 or 2", args, code)
+		}
+	})
+}

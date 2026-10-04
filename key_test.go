@@ -82,3 +82,39 @@ func TestCustomKeyErrors(t *testing.T) {
 		}
 	}
 }
+
+// FromKey receives arbitrary text, so it must never panic, and every key it
+// accepts must describe a working cipher whose Key() can be loaded again.
+func FuzzFromKey(f *testing.F) {
+	f.Add(New(1).Key())
+	f.Add(mustCharsetFuzz(PortugueseCharset, 1).Key())
+	f.Add("c3:abcbca")
+	f.Add("c3:abc")
+	f.Add("c:")
+	f.Add("")
+	f.Fuzz(func(t *testing.T, key string) {
+		c, err := FromKey(key)
+		if err != nil {
+			return
+		}
+		const sample = "Hello, Wörld 123 ação \xff"
+		if got := c.Decode(c.Encode(sample)); got != sample {
+			t.Fatalf("accepted key %q: decoding the encoded text did not give the original: want %q, got %q", key, sample, got)
+		}
+		again, err := FromKey(c.Key())
+		if err != nil {
+			t.Fatalf("accepted key %q, but its own Key() %q was rejected: %v", key, c.Key(), err)
+		}
+		if again.Encode(sample) != c.Encode(sample) {
+			t.Fatalf("accepted key %q: the cipher rebuilt from Key() encodes differently", key)
+		}
+	})
+}
+
+func mustCharsetFuzz(charset string, seed int64) *Cipher {
+	c, err := NewWithCharset(charset, seed)
+	if err != nil {
+		panic(err)
+	}
+	return c
+}

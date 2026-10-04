@@ -144,3 +144,30 @@ func ExampleNewWithCharset() {
 	fmt.Println(c.Decode(enc))
 	// Output: Ação
 }
+
+// NewWithCharset receives arbitrary text (the -c option of the CLI), so it
+// must never panic, and every charset it accepts must give a working cipher.
+func FuzzNewWithCharset(f *testing.F) {
+	f.Add("abc", int64(1), "a b c d")
+	f.Add(PortugueseCharset, int64(2), "Ação")
+	f.Add("😀😁", int64(3), "😀 x 😁")
+	f.Add("a:b", int64(4), "a:b")
+	f.Add("", int64(5), "x")
+	f.Add("ab\xff", int64(6), "x")
+	f.Fuzz(func(t *testing.T, charset string, seed int64, text string) {
+		c, err := NewWithCharset(charset, seed)
+		if err != nil {
+			return
+		}
+		if got := c.Decode(c.Encode(text)); got != text {
+			t.Fatalf("charset %q: decoding the encoded text did not give the original: want %q, got %q", charset, text, got)
+		}
+		restored, err := FromKey(c.Key())
+		if err != nil {
+			t.Fatalf("charset %q: its own Key() %q was rejected: %v", charset, c.Key(), err)
+		}
+		if restored.Encode(text) != c.Encode(text) {
+			t.Fatalf("charset %q: the cipher rebuilt from Key() encodes differently", charset)
+		}
+	})
+}
