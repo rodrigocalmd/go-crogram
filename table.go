@@ -1,24 +1,10 @@
 package crogram
 
-// generateCharset creates the character set for the cryptogram.
-// It includes lowercase letters, uppercase letters, and numbers.
-func generateCharset() []rune {
-	var charset []rune
+// DefaultCharset is the character set used by New: lowercase letters,
+// uppercase letters and digits, in this exact order. The order is part of
+// the contract: together with the seed it determines the cipher, so it must
+// never change.
+const DefaultCharset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-	// Add lowercase letters 'a' through 'z'
-	for r := 'a'; r <= 'z'; r++ {
-		charset = append(charset, r)
-	}
-
-	// Add uppercase letters 'A' through 'Z'
-	for r := 'A'; r <= 'Z'; r++ {
-		charset = append(charset, r)
-	}
-
-	// Add numbers '0' through '9'
-	for r := '0'; r <= '9'; r++ {
-		charset = append(charset, r)
-	}
-
-	return charset
-}
+// defaultRunes is DefaultCharset as runes. It is only read, never modified.
+var defaultRunes = []rune(DefaultCharset)
