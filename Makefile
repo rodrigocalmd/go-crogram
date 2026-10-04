@@ -5,7 +5,7 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 # Where "go install" puts binaries: GOBIN, or GOPATH/bin when GOBIN is empty.
 GOBIN_DIR := $(or $(shell go env GOBIN),$(shell go env GOPATH)/bin)
 
-.PHONY: help build install uninstall test lint examples
+.PHONY: help build install uninstall test lint fuzz examples
 
 help: ## show this help
 	@grep -E '^[a-z]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-10s %s\n", $$1, $$2}'
@@ -30,6 +30,13 @@ test: ## run vet and the tests with the race detector
 
 lint: ## fail if any file is not gofmt-formatted
 	@test -z "$$(gofmt -l $$(git ls-files '*.go') 2>/dev/null)" || { gofmt -l .; exit 1; }
+
+FUZZTIME ?= 10s
+fuzz: ## run every fuzz target (FUZZTIME=30s make fuzz)
+	@for t in FuzzRoundTrip FuzzCharsetRoundTrip FuzzFromKey FuzzNewWithCharset FuzzStreamMatchesEncode; do \
+		echo "== $$t"; go test -run '^$$' -fuzz "^$$t$$" -fuzztime $(FUZZTIME) . || exit 1; \
+	done
+	@echo "== FuzzCLI"; go test -run '^$$' -fuzz '^FuzzCLI$$' -fuzztime $(FUZZTIME) ./cmd/crogram
 
 examples: ## run the CLI examples
 	sh examples/cli.sh

@@ -144,6 +144,16 @@ crogram decode -k "$(crogram key -s 42)" -f in.txt -o out.txt
 
 Other options: `-q/--quiet` (don't print the seed on encode), `-v/--version`, `-h/--help`. In a terminal, `encode` prints a hint such as `seed: 42   (decode with: crogram decode -s 42)`; when piped, it prints just the number.
 
+### Development
+
+```sh
+make test              # go vet + go test -race -cover
+make fuzz              # every fuzz target, 10s each (FUZZTIME=1m make fuzz)
+make lint              # gofmt check
+```
+
+The fuzz targets check, with random input, that decoding always undoes encoding, that `FromKey` and `NewWithCharset` never panic, that streaming equals `Encode`/`Decode` for any chunk size (including characters cut in half), and that the CLI only exits with code 0, 1 or 2. If the fuzzer finds a failure, Go saves it in `testdata/fuzz/`; commit that file as a regression test.
+
 ### Examples
 
 Everything above has a runnable example:
